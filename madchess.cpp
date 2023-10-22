@@ -17,11 +17,11 @@ bool destination_is_on_board(int x1, int delta_x, int delta_y) {
 #include <algorithm>
 #include <random>
 
+
 using namespace std;
 
 class Chess {
     vector<int> start_board;
-    long int gj = INFINITY;
     int total_m = 3;
     vector<int> bestmoves;
     int P, B, N, R, wP, wB, wN, wR;
@@ -105,7 +105,6 @@ public:
         shuffle(board.begin(), board.end(), g);
 
         start_board = board;
-        gj = accumulate((board).begin(), (board).end(), 0);
     }
 
     void printChessboard() {
@@ -213,21 +212,25 @@ public:
         return std::make_pair(letter, number);
     }
 
-    vector<vector<int>> bestMoveSequence;
+    vector <pair<vector < vector < int>>, int>>
+    bestMoveSequence;
 
+    bool cmp(pair<vector<vector < int>>, int> a , pair<vector<vector < int>>, int> b){
+        return a.second < b.second;
+    }
 
     void findMoves(int remainingMoves, vector<int> hist, vector<int> b) {
         int totalValue = accumulate(b.begin(), b.end(), 0);
-        if (totalValue < 1000000 && gj > totalValue) {
-            gj = -totalValue / pow(10, remainingMoves);
-            bestMoveSequence = {hist};
+        if (totalValue < 1000000) {
+            totalValue = -totalValue - pow(10000, remainingMoves);
+            bestMoveSequence.push_back({{hist}, totalValue});
             return;
-        } else if (totalValue < gj) {
-            gj = totalValue;
-            bestMoveSequence = {hist};
         }
-        //cout << remainingMoves;
-        if (remainingMoves == 0) return;
+        if (remainingMoves == 0) {
+            bestMoveSequence.push_back({{hist}, totalValue});
+            return;
+        }
+
         for (int i = 0; i < 64; i++) {
             if (b[i] == 1) {
                 Pawn(i, remainingMoves, hist, b);
@@ -246,7 +249,9 @@ public:
 
     void printBestMoveSequence() {
         printChessboard();
-        for (const vector<int> &move: bestMoveSequence) {
+        std::sort(bestMoveSequence.begin(), bestMoveSequence.end(), cmp);
+        vector < vector < int>> bMS = bestMoveSequence[0].first;
+        for (const vector<int> &move: bMS) {
             for (int element: move) {
                 domove(element);
                 cout << indexToChessCoordinates(element / 100).first
@@ -260,50 +265,32 @@ public:
         }
     }
 
+    void try_to_move(int cord, int destination, int move, vector<int> hist, vector<int> b) {
+        if ((b)[destination] > 99 or (b)[destination] == 0) {
+            vector<int> hist1 = hist;
+            hist1.push_back(cord * 100 + destination);
+            vector<int> b1 = b;
+            b1[destination] = b1[cord];
+            b1[cord] = 0;
+            findMoves(move - 1, hist1, b1);
+        }
+    }
+
     void Rook(int cord, int move, vector<int> hist, vector<int> b) {
-        int dest = 0;
         for (int i = cord + 1; destination_is_on_board(i - 1, 1, 0); i++) {
-            if ((b)[i] > 99 or (b)[i] == 0) {
-                vector<int> hist1 = hist;
-                hist1.push_back(cord * 100 + i);
-                vector<int> b1 = b;
-                b1[i] = b1[cord];
-                b1[cord] = 0;
-                findMoves(move - 1, hist1, b1);
-            }
+            this->this->try_to_move(cord=cord, i, move=move, hist=hist, b=b);
             if (b[i] != 0) break;
         }
         for (int i = cord + 8; destination_is_on_board(i - 8, 0, 1); i += 8) {
-            if ((b)[i] > 99 or (b)[i] == 0) {
-                vector<int> hist1 = hist;
-                hist1.push_back(cord * 100 + i);
-                vector<int> b1 = b;
-                b1[i] = b1[cord];
-                b1[cord] = 0;
-                findMoves(move - 1, hist1, b1);
-            }
+            this->this->try_to_move(cord=cord, i, move=move, hist=hist, b=b);
             if (b[i] != 0) break;
         }
         for (int i = cord - 8; destination_is_on_board(i + 8, 0, -1); i -= 8) {
-            if ((b)[i] > 99 or (b)[i] == 0) {
-                vector<int> hist1 = hist;
-                hist1.push_back(cord * 100 + i);
-                vector<int> b1 = b;
-                b1[i] = b1[cord];
-                b1[cord] = 0;
-                findMoves(move - 1, hist1, b1);
-            }
+            this->this->try_to_move(cord=cord, i, move=move, hist=hist, b=b);
             if (b[i] != 0) break;
         }
         for (int i = cord - 1; destination_is_on_board(i + 1, -1, 0); i--) {
-            if ((b)[i] > 99 or (b)[i] == 0) {
-                vector<int> hist1 = hist;
-                hist1.push_back(cord * 100 + i);
-                vector<int> b1 = b;
-                b1[i] = b1[cord];
-                b1[cord] = 0;
-                findMoves(move - 1, hist1, b1);
-            }
+            this->this->try_to_move(cord=cord, i, move=move, hist=hist, b=b);
             if (b[i] != 0) break;
         }
     }
@@ -311,49 +298,20 @@ public:
     void Bishop(int cord, int move, vector<int> hist, vector<int> b) {
         int dest = 0;
         for (int i = cord + 9; destination_is_on_board(i - 9, 1, 1); i += 9) {
-            if ((b)[i] > 99 or (b)[i] == 0) {
-                vector<int> hist1 = hist;
-                hist1.push_back(cord * 100 + i);
-                vector<int> b1 = b;
-                b1[i] = b1[cord];
-                b1[cord] = 0;
-                findMoves(move - 1, hist1, b1);
-            }
+            this->try_to_move(cord=cord, i, move=move, hist=hist, b=b);
             if (b[i] != 0) break;
         }
         for (int i = cord - 7; destination_is_on_board(i + 7, 1, -1); i -= 7) {
-            if ((b)[i] > 99 or (b)[i] == 0) {
-
-                vector<int> hist1 = hist;
-                hist1.push_back(cord * 100 + i);
-                vector<int> b1 = b;
-                b1[i] = b1[cord];
-                b1[cord] = 0;
-                findMoves(move - 1, hist1, b1);
-            }
+            this->this->try_to_move(cord=cord, i, move=move, hist=hist, b=b);
             if (b[i] != 0) break;
 
         }
         for (int i = cord - 9; destination_is_on_board(i + 9, -1, -1); i -= 9) {
-            if ((b)[i] > 99 or (b)[i] == 0) {
-                vector<int> hist1 = hist;
-                hist1.push_back(cord * 100 + i);
-                vector<int> b1 = b;
-                b1[i] = b1[cord];
-                b1[cord] = 0;
-                findMoves(move - 1, hist1, b1);
-            }
+            this->this->try_to_move(cord=cord, i, move=move, hist=hist, b=b);
             if (b[i] != 0) break;
         }
         for (int i = cord + 7; destination_is_on_board(i - 7, -1, 1); i += 7) {
-            if ((b)[i] > 99 or (b)[i] == 0) {
-                vector<int> hist1 = hist;
-                hist1.push_back(cord * 100 + i);
-                vector<int> b1 = b;
-                b1[i] = b1[cord];
-                b1[cord] = 0;
-                findMoves(move - 1, hist1, b1);
-            }
+            this->this->try_to_move(cord=cord, i, move=move, hist=hist, b=b);
             if (b[i] != 0) break;
         }
 
@@ -361,58 +319,33 @@ public:
 
     void Pawn(int cord, int move, vector<int> hist, vector<int> b) {
         if (destination_is_on_board(cord, 0, 1)) {
-            if ((b)[cord + 8] == 0) {
-                int i = cord + 8;
-                vector<int> hist1 = hist;
-                hist1.push_back(cord * 100 + i);
-                vector<int> b1 = b;
-                b1[i] = b1[cord];
-                b1[cord] = 0;
-                findMoves(move - 1, hist1, b1);
+            int i = cord + 0;
+            if (b[i] > 99) {
+                this->this->try_to_move(cord=cord, i, move=move, hist=hist, b=b);
             }
 
         }
         if (destination_is_on_board(cord, 1, 1)) {
-            if ((b)[cord + 9] > 99) {
-                int i = cord + 9;
-
-                vector<int> hist1 = hist;
-                hist.push_back(cord * 100 + i);
-                vector<int> b1 = b;
-                b1[i] = b1[cord];
-                b1[cord] = 0;
-                findMoves(move - 1, hist1, b1);
+            int i = cord + 9;
+            if (b[i] > 99) {
+                this->this->try_to_move(cord=cord, i, move=move, hist=hist, b=b);
             }
 
         }
         if (destination_is_on_board(cord, -1, 1)) {
-            if ((b)[cord + 7] > 99) {
-                int i = cord + 7;
-
-                vector<int> hist1 = hist;
-                hist1.push_back(cord * 100 + i);
-                vector<int> b1 = b;
-                b1[i] = b1[cord];
-                b1[cord] = 0;
-                findMoves(move - 1, hist1, b1);
+            int i = cord + 7;
+            if (b[i] > 99) {
+                this->this->try_to_move(cord=cord, i, move=move, hist=hist, b=b);
             }
-
         }
     }
 
     void Knight(int cord, int move, vector<int> hist, vector<int> b) {
-        int dest[] = {1, 2, 2, 1, 2, -1, 1, -2, -1, -2, -2, -1, -2, 1, -1, 2};
+        int dest[] = {-1, 2, -1, -2, 1, 2, 1, -2, 1, -2, 1, 2, -1, -2, -1, 2};
         for (int j = 0; j < 16; j += 2) {
             if (destination_is_on_board(cord, dest[j], dest[j + 1])) {
-                if ((b)[cord + dest[j] + dest[j + 1] * 8] > 99 or (b)[cord + dest[j] + dest[j + 1] * 8] == 0) {
-                    int i = cord + dest[j] + dest[j + 1] * 8;
-                    vector<int> hist1 = hist;
-                    hist1.push_back(cord * 100 + i);
-                    vector<int> b1 = b;
-                    b1[i] = b1[cord];
-                    b1[cord] = 0;
-                    findMoves(move - 1, hist1, b1);
-                }
+                int i = dest[j] + dest[j + 1] * 8;
+                this->this->try_to_move(cord=cord, i, move=move, hist=hist, b=b);
             }
         }
     }
@@ -421,15 +354,8 @@ public:
         int dest[] = {-1, -1, -1, 0, -1, 1, 0, -1, 0, 1, 1, -1, 1, 0, 1, 1};
         for (int j = 0; j < 16; j += 2) {
             if (destination_is_on_board(cord, dest[j], dest[j + 1])) {
-                if ((b[cord + dest[j] + dest[j + 1] * 8] > 99) or (b[cord + dest[j] + dest[j + 1] * 8] == 0)) {
-                    int i = cord + dest[j] + dest[j + 1] * 8;
-                    vector<int> hist1 = hist;
-                    hist1.push_back(cord * 100 + i);
-                    vector<int> b1 = b;
-                    b1[i] = b1[cord];
-                    b1[cord] = 0;
-                    findMoves(move - 1, hist1, b1);
-                }
+                int i = dest[j] + dest[j + 1] * 8;
+                this->this->try_to_move(cord=cord, i, move=move, hist=hist, b=b);
             }
         }
     }
