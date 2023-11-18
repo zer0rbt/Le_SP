@@ -20,10 +20,15 @@ bool destination_is_on_board(int x1, int delta_x, int delta_y) {
 
 using namespace std;
 
+bool cmp(pair<vector<vector<int>>, int> a, pair<vector<vector<int>>, int> b) {
+    return a.second < b.second;
+}
+
 class Chess {
     vector<int> start_board;
-    int total_m = 3;
     vector<int> bestmoves;
+    int best_try = -1;
+    int totalMoves = 4;
     int P, B, N, R, wP, wB, wN, wR;
 
 public:
@@ -167,36 +172,6 @@ public:
         board[move / 100] = 0;
     }
 
-
-    void printWinner() {
-        /*for (int element: bestmoves)
-            domove(element);
-        while (accumulate((board).begin(), (board).end(), 0) > 100000000){
-            cout << accumulate((board).begin(), (board).end(), 0) << "||" << gj << endl;
-            this->board = vector<int>(64, 0);
-            createBoard(0, 0, 0, 1);
-            vector<int> bbb1;
-            this->gj = INFINITY;
-            findMoves(3, bbb1, &this->board);
-            if (gj < 0){
-                cout << "HEEHHE";
-                break;
-            }
-        }
-        board = start_board;*/
-        printChessboard();
-        for (int element: bestmoves) {
-            domove(element);
-            cout << indexToChessCoordinates(element / 100).first << indexToChessCoordinates(element / 100).second
-                 << "-->" << indexToChessCoordinates(element % 100).first
-                 << indexToChessCoordinates(element % 100).second << " " << element << endl;
-            printChessboard();
-        }
-        board = start_board;
-        printChessboard();
-
-    }
-
     std::pair<char, int> indexToChessCoordinates(int index) {
 
         if (index < 0 || index >= 64) {
@@ -211,26 +186,23 @@ public:
 
         return std::make_pair(letter, number);
     }
+    vector<pair<vector<vector<int>>, int>>
+            bestMoveSequence;
 
-    vector <pair<vector < vector < int>>, int>>
-    bestMoveSequence;
-
-    bool cmp(pair<vector<vector < int>>, int> a , pair<vector<vector < int>>, int> b){
-        return a.second < b.second;
-    }
 
     void findMoves(int remainingMoves, vector<int> hist, vector<int> b) {
         int totalValue = accumulate(b.begin(), b.end(), 0);
         if (totalValue < 1000000) {
             totalValue = -totalValue - pow(10000, remainingMoves);
             bestMoveSequence.push_back({{hist}, totalValue});
+            best_try = remainingMoves;
             return;
         }
+        if (remainingMoves < best_try) return;
         if (remainingMoves == 0) {
             bestMoveSequence.push_back({{hist}, totalValue});
             return;
         }
-
         for (int i = 0; i < 64; i++) {
             if (b[i] == 1) {
                 Pawn(i, remainingMoves, hist, b);
@@ -248,9 +220,16 @@ public:
 
 
     void printBestMoveSequence() {
+        vector<int> bbb;
+        findMoves(this->totalMoves, bbb, this->board);
         printChessboard();
         std::sort(bestMoveSequence.begin(), bestMoveSequence.end(), cmp);
-        vector < vector < int>> bMS = bestMoveSequence[0].first;
+        vector<vector<int>> bMS = bestMoveSequence[0].first;
+        if (bMS[0].size() == 1){
+            this->createBoard();
+            printBestMoveSequence();
+            return;
+        }
         for (const vector<int> &move: bMS) {
             for (int element: move) {
                 domove(element);
@@ -278,19 +257,19 @@ public:
 
     void Rook(int cord, int move, vector<int> hist, vector<int> b) {
         for (int i = cord + 1; destination_is_on_board(i - 1, 1, 0); i++) {
-            this->this->try_to_move(cord=cord, i, move=move, hist=hist, b=b);
+            this->try_to_move(cord = cord, i, move = move, hist = hist, b = b);
             if (b[i] != 0) break;
         }
         for (int i = cord + 8; destination_is_on_board(i - 8, 0, 1); i += 8) {
-            this->this->try_to_move(cord=cord, i, move=move, hist=hist, b=b);
+            this->try_to_move(cord = cord, i, move = move, hist = hist, b = b);
             if (b[i] != 0) break;
         }
         for (int i = cord - 8; destination_is_on_board(i + 8, 0, -1); i -= 8) {
-            this->this->try_to_move(cord=cord, i, move=move, hist=hist, b=b);
+            this->try_to_move(cord = cord, i, move = move, hist = hist, b = b);
             if (b[i] != 0) break;
         }
         for (int i = cord - 1; destination_is_on_board(i + 1, -1, 0); i--) {
-            this->this->try_to_move(cord=cord, i, move=move, hist=hist, b=b);
+            this->try_to_move(cord = cord, i, move = move, hist = hist, b = b);
             if (b[i] != 0) break;
         }
     }
@@ -298,20 +277,20 @@ public:
     void Bishop(int cord, int move, vector<int> hist, vector<int> b) {
         int dest = 0;
         for (int i = cord + 9; destination_is_on_board(i - 9, 1, 1); i += 9) {
-            this->try_to_move(cord=cord, i, move=move, hist=hist, b=b);
+            this->try_to_move(cord = cord, i, move = move, hist = hist, b = b);
             if (b[i] != 0) break;
         }
         for (int i = cord - 7; destination_is_on_board(i + 7, 1, -1); i -= 7) {
-            this->this->try_to_move(cord=cord, i, move=move, hist=hist, b=b);
+            this->try_to_move(cord = cord, i, move = move, hist = hist, b = b);
             if (b[i] != 0) break;
 
         }
         for (int i = cord - 9; destination_is_on_board(i + 9, -1, -1); i -= 9) {
-            this->this->try_to_move(cord=cord, i, move=move, hist=hist, b=b);
+            this->try_to_move(cord = cord, i, move = move, hist = hist, b = b);
             if (b[i] != 0) break;
         }
         for (int i = cord + 7; destination_is_on_board(i - 7, -1, 1); i += 7) {
-            this->this->try_to_move(cord=cord, i, move=move, hist=hist, b=b);
+            this->try_to_move(cord = cord, i, move = move, hist = hist, b = b);
             if (b[i] != 0) break;
         }
 
@@ -321,21 +300,21 @@ public:
         if (destination_is_on_board(cord, 0, 1)) {
             int i = cord + 0;
             if (b[i] > 99) {
-                this->this->try_to_move(cord=cord, i, move=move, hist=hist, b=b);
+                this->try_to_move(cord = cord, i, move = move, hist = hist, b = b);
             }
 
         }
         if (destination_is_on_board(cord, 1, 1)) {
             int i = cord + 9;
             if (b[i] > 99) {
-                this->this->try_to_move(cord=cord, i, move=move, hist=hist, b=b);
+                this->try_to_move(cord = cord, i, move = move, hist = hist, b = b);
             }
 
         }
         if (destination_is_on_board(cord, -1, 1)) {
             int i = cord + 7;
             if (b[i] > 99) {
-                this->this->try_to_move(cord=cord, i, move=move, hist=hist, b=b);
+                this->try_to_move(cord = cord, i, move = move, hist = hist, b = b);
             }
         }
     }
@@ -344,8 +323,8 @@ public:
         int dest[] = {-1, 2, -1, -2, 1, 2, 1, -2, 1, -2, 1, 2, -1, -2, -1, 2};
         for (int j = 0; j < 16; j += 2) {
             if (destination_is_on_board(cord, dest[j], dest[j + 1])) {
-                int i = dest[j] + dest[j + 1] * 8;
-                this->this->try_to_move(cord=cord, i, move=move, hist=hist, b=b);
+                int i = cord + dest[j] + dest[j + 1] * 8;
+                this->try_to_move(cord = cord, i, move = move, hist = hist, b = b);
             }
         }
     }
@@ -354,8 +333,8 @@ public:
         int dest[] = {-1, -1, -1, 0, -1, 1, 0, -1, 0, 1, 1, -1, 1, 0, 1, 1};
         for (int j = 0; j < 16; j += 2) {
             if (destination_is_on_board(cord, dest[j], dest[j + 1])) {
-                int i = dest[j] + dest[j + 1] * 8;
-                this->this->try_to_move(cord=cord, i, move=move, hist=hist, b=b);
+                int i = cord + dest[j] + dest[j + 1] * 8;
+                this->try_to_move(cord = cord, i, move = move, hist = hist, b = b);
             }
         }
     }
@@ -363,10 +342,7 @@ public:
 };
 
 int main() {
-    Chess party(0, 0, 0, 1, 0, 0, 0, 1);
-    vector<int> bbb;
-    party.printChessboard();
-    party.findMoves(3, bbb, party.board);
+    Chess party(2, 2, 2, 2, 2, 2, 2, 2);
     party.printBestMoveSequence();
     return 0;
 }

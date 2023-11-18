@@ -1,0 +1,9 @@
+[Unit]
+Description=Backup Daemon
+
+[Service]
+ExecStart=/path/to/your/backup_daemon_binary
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
